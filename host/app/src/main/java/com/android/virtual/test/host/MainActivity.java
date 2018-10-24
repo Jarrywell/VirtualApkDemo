@@ -3,7 +3,11 @@ package com.android.virtual.test.host;
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.LoadedPlugin;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +17,8 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "VirtualApk";
+
+    private static final int PERMISSION_REQUEST_CODE_STORAGE = 20171222;
 
     private final String PLUGIN1_PATH_NAME = "/sdcard/plugin1.apk";
 
@@ -26,6 +32,11 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.id_btn_load).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!hasPermission()) {
+                    requestPermission();
+                    return;
+                }
+
                 File apk = new File(PLUGIN1_PATH_NAME);
                 if (apk.exists() && apk.length() > 0) {
                     try {
@@ -52,5 +63,35 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private boolean hasPermission() {
+
+        Log.d(TAG,"hasPermission");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        }
+        return true;
+    }
+
+
+    private void requestPermission() {
+
+        Log.d(TAG,"requestPermission");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE_STORAGE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (PERMISSION_REQUEST_CODE_STORAGE == requestCode) {
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                requestPermission();
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 }
